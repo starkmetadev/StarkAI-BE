@@ -1,73 +1,77 @@
+const { default: axios } = require("axios");
 const express = require("express");
-const fs = require("fs");
 const router = express.Router();
+const Image = require("../model/Image");
 
-const engineId = "stable-diffusion-v1-6";
-const apiHost = process.env.API_HOST ?? "https://api.stability.ai";
-const apiKey = process.env.STABILITY_API_KEY;
-const Upload = require("../data/upload");
+const saveImage = async (username, generationID) => {
+  const options = {
+    method: "GET",
+    url: `https://cloud.leonardo.ai/api/rest/v1/generations/${generationID}`,
+    headers: {
+      accept: "application/json",
+      authorization: `Bearer ${process.env.LEONARDO_API_KEY}`,
+    },
+  };
 
-if (!apiKey) throw new Error("Missing Stability API Key.");
+  let response;
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-router.post("/text-to-image", async (req, res) => {
-  const response = await fetch(
-    `${apiHost}/v1/generation/${engineId}/text-to-image`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        text_prompts: [
-          {
-            text: req.body.text,
-          },
-        ],
-        cfg_scale: 7,
-        height: 1024,
-        width: 1024,
-        steps: 30,
-        samples: 1,
-      }),
-    }
-  );
-  if (!response.ok) {
-    res.send({ message: "Failed" });
-    throw new Error(`Non-200 response: ${await response.text()}`);
-  }
-
-  const responseJSON = await response.json();
-
-  if (
-    !responseJSON ||
-    !responseJSON.artifacts ||
-    !Array.isArray(responseJSON.artifacts)
-  ) {
-    console.log("Invalid response or artifacts data");
-    res.status(500).send({ error: "Invalid response data" });
-    return;
-  }
-
-  const uploadPromises = responseJSON.artifacts.map(async (image, index) => {
+  while (true) {
     try {
-      return await Upload(
-        `${req.body.user}/${req.body.text}`,
-        Buffer.from(image.base64, "base64")
-      );
-    } catch (uploadError) {
-      console.log("Error uploading file:", uploadError);
-      throw uploadError; // rethrow the error to be caught by the outer try-catch block
+      response = await axios.request(options);
+      if (response.data.generations_by_pk.generated_images.length >= 1) {
+        break;
+      }
+    } catch (error) {
+      console.error(error);
     }
+    await wait(3000);
+  }
+
+  console.log(response.data);
+  const data = new Image({
+    image: response.data.generations_by_pk.generated_images[0].url,
+    owner: username,
+    created: response.data.generations_by_pk.createdAt,
   });
 
-  try {
-    await Promise.all(uploadPromises);
-    res.send({ message: "Success" });
-  } catch (error) {
-    res.status(500).send({ error: "An error occurred during upload" });
-  }
+  return await data.save();
+};
+
+router.post("/text-to-image", async (req, res) => {
+  const { user: username, text: prompt } = req.body;
+  console.log(req.body);
+  const options = {
+    method: "POST",
+    url: "https://cloud.leonardo.ai/api/rest/v1/generations",
+    headers: {
+      accept: "application/json",
+      "content-type": "application/json",
+      authorization: `Bearer ${process.env.LEONARDO_API_KEY}`,
+    },
+    data: {
+      height: 1024,
+      modelId: "6bef9f1b-29cb-40c7-b9df-32b51c1f67d3",
+      prompt: prompt,
+      width: 1024,
+      num_images: 1,
+    },
+  };
+  // await saveImage(username, "f71c1a78-8dfa-46ee-aa16-bc82b602ed68");
+  let imageData;
+  await axios
+    .request(options)
+    .then(function (response) {
+      console.log(response.data);
+      imageData = response.data;
+    })
+    .catch(function (error) {
+      console.error(error);
+      res.status(200).send({ message: "Fail" });
+    });
+
+  await saveImage(username, imageData.sdGenerationJob.generationId);
+  res.status(200).send({ message: "Success" });
 });
 
 module.exports = router;

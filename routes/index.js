@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const User = require("../model/User");
 const generate = require("./generate");
+const getImages = require("./getImages");
 
 router.post("/login", async (req, res) => {
   const { username, email, password } = req.body;
@@ -29,5 +30,6 @@ router.post("/login", async (req, res) => {
 router.post("/register", async (req, res) => {});
 
 router.use("/generate", generate);
+router.use("/getImages", getImages);
 
 module.exports = router;
