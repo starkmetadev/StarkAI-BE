@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 const Image = require("../model/Image");
 
-const saveImage = async (username, generationID) => {
+const saveImages = async (username, generationID, numberOfImages) => {
   const options = {
     method: "GET",
     url: `https://cloud.leonardo.ai/api/rest/v1/generations/${generationID}`,
@@ -19,7 +19,10 @@ const saveImage = async (username, generationID) => {
   while (true) {
     try {
       response = await axios.request(options);
-      if (response.data.generations_by_pk.generated_images.length >= 1) {
+      if (
+        response.data.generations_by_pk.generated_images.length ===
+        numberOfImages
+      ) {
         break;
       }
     } catch (error) {
@@ -28,19 +31,43 @@ const saveImage = async (username, generationID) => {
     await wait(3000);
   }
 
-  console.log(response.data);
-  const data = new Image({
-    image: response.data.generations_by_pk.generated_images[0].url,
-    owner: username,
-    created: response.data.generations_by_pk.createdAt,
-  });
-
-  return await data.save();
+  const generatedImages = response.data.generations_by_pk.generated_images;
+  const created = response.data.generations_by_pk.createdAt;
+  console.log(generatedImages);
+  for (let i = 0; i < generatedImages.length; i++) {
+    const imageData = new Image({
+      image: generatedImages[i].url,
+      owner: username,
+      created: created,
+    });
+    await imageData.save();
+  }
 };
 
 router.post("/text-to-image", async (req, res) => {
-  const { user: username, text: prompt } = req.body;
+  const {
+    user: username,
+    text: prompt,
+    model,
+    alchemy,
+    presetStyle,
+    numberOfImages,
+  } = req.body;
   console.log(req.body);
+  let style;
+  switch (presetStyle) {
+    case "3D Render":
+      style = "RENDER_3D";
+      break;
+    case "Sketch B/W":
+      style = "SKETCH_BW";
+      break;
+    case "Sketch Color":
+      style = "SKETCH_COLOR";
+      break;
+    default:
+      style = presetStyle.toUpperCase();
+  }
   const options = {
     method: "POST",
     url: "https://cloud.leonardo.ai/api/rest/v1/generations",
@@ -51,18 +78,18 @@ router.post("/text-to-image", async (req, res) => {
     },
     data: {
       height: 1024,
-      modelId: "6bef9f1b-29cb-40c7-b9df-32b51c1f67d3",
+      modelId: model,
       prompt: prompt,
       width: 1024,
-      num_images: 1,
+      num_images: numberOfImages,
+      alchemy: alchemy,
+      presetStyle: style,
     },
   };
-  // await saveImage(username, "f71c1a78-8dfa-46ee-aa16-bc82b602ed68");
   let imageData;
   await axios
     .request(options)
     .then(function (response) {
-      console.log(response.data);
       imageData = response.data;
     })
     .catch(function (error) {
@@ -70,7 +97,11 @@ router.post("/text-to-image", async (req, res) => {
       res.status(200).send({ message: "Fail" });
     });
 
-  await saveImage(username, imageData.sdGenerationJob.generationId);
+  await saveImages(
+    username,
+    imageData.sdGenerationJob.generationId,
+    numberOfImages
+  );
   res.status(200).send({ message: "Success" });
 });
 
