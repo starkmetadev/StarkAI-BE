@@ -13,6 +13,10 @@ const imageSchema = new mongoose.Schema({
     required: true,
     type: Date,
   },
+  data: {
+    required: true,
+    type: Object,
+  },
 });
 
 module.exports = mongoose.model("Image", imageSchema);
