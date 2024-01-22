@@ -3,7 +3,7 @@ const express = require("express");
 const router = express.Router();
 const Image = require("../model/Image");
 
-const saveImages = async (username, generationID, numberOfImages) => {
+const saveImages = async (username, generationID, numberOfImages, detail) => {
   const options = {
     method: "GET",
     url: `https://cloud.leonardo.ai/api/rest/v1/generations/${generationID}`,
@@ -39,6 +39,7 @@ const saveImages = async (username, generationID, numberOfImages) => {
       image: generatedImages[i].url,
       owner: username,
       created: created,
+      data: detail,
     });
     await imageData.save();
   }
@@ -52,9 +53,13 @@ router.post("/text-to-image", async (req, res) => {
     alchemy,
     presetStyle,
     numberOfImages,
+    dimension,
   } = req.body;
   console.log(req.body);
-  let style;
+  let style, wid, hei;
+  wid = parseInt(dimension.split("*")[0]);
+  hei = parseInt(dimension.split("*")[1]);
+  console.log(wid, hei);
   switch (presetStyle) {
     case "3D Render":
       style = "RENDER_3D";
@@ -64,6 +69,9 @@ router.post("/text-to-image", async (req, res) => {
       break;
     case "Sketch Color":
       style = "SKETCH_COLOR";
+      break;
+    case "StarkAI":
+      style = "LEONARDO";
       break;
     default:
       style = presetStyle.toUpperCase();
@@ -77,10 +85,10 @@ router.post("/text-to-image", async (req, res) => {
       authorization: `Bearer ${process.env.LEONARDO_API_KEY}`,
     },
     data: {
-      height: 1024,
+      height: hei,
       modelId: model,
       prompt: prompt,
-      width: 1024,
+      width: wid,
       num_images: numberOfImages,
       alchemy: alchemy,
       presetStyle: style,
@@ -100,7 +108,8 @@ router.post("/text-to-image", async (req, res) => {
   await saveImages(
     username,
     imageData.sdGenerationJob.generationId,
-    numberOfImages
+    numberOfImages,
+    options.data
   );
   res.status(200).send({ message: "Success" });
 });

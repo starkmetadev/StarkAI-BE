@@ -3,6 +3,7 @@ const router = express.Router();
 const User = require("../model/User");
 const generate = require("./generate");
 const getImages = require("./getImages");
+const getAllImages = require("./getAllImages");
 
 router.post("/login", async (req, res) => {
   const { username, email, password } = req.body;
@@ -31,5 +32,6 @@ router.post("/register", async (req, res) => {});
 
 router.use("/generate", generate);
 router.use("/getImages", getImages);
+router.use("/getAllImages", getAllImages);
 
 module.exports = router;
