@@ -4,6 +4,7 @@ const User = require("../model/User");
 const generate = require("./generate");
 const getImages = require("./getImages");
 const getAllImages = require("./getAllImages");
+const deleteImage = require("./deleteImage");
 
 router.post("/login", async (req, res) => {
   const { username, email, password } = req.body;
@@ -33,5 +34,6 @@ router.post("/register", async (req, res) => {});
 router.use("/generate", generate);
 router.use("/getImages", getImages);
 router.use("/getAllImages", getAllImages);
+router.use("/deleteImage", deleteImage);
 
 module.exports = router;
