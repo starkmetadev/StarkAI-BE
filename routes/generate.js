@@ -59,7 +59,6 @@ router.post("/text-to-image", async (req, res) => {
   let style, wid, hei;
   wid = parseInt(dimension.split("*")[0]);
   hei = parseInt(dimension.split("*")[1]);
-  console.log(wid, hei);
   switch (presetStyle) {
     case "3D Render":
       style = "RENDER_3D";
