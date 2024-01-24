@@ -16,6 +16,8 @@ const Upload = async (filename, filedata) => {
     Bucket: process.env.BUCKET_NAME,
     Key: filename,
     // Body: fs.createReadStream("./data/lion.png"),
+    ContentType: "image/jpeg",
+    ACL: "public-read",
     Body: filedata,
   };
 
@@ -26,11 +28,7 @@ const Upload = async (filename, filedata) => {
         console.log("Error uploading file:", err);
         reject(err);
       } else {
-        console.log(
-          "File uploaded successfully. File location:",
-          data.Location
-        );
-        resolve(data);
+        resolve(data.Location);
       }
     });
   });
