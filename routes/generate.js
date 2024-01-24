@@ -5,9 +5,11 @@ const express = require("express");
 const router = express.Router();
 const Image = require("../model/Image");
 const FormData = require("form-data");
+const stream = require("stream");
+const Upload = require("../data/upload");
 
 const multer = require("multer");
-const upload = multer({ dest: os.tmpdir() });
+const fileUpload = multer({ dest: os.tmpdir() });
 
 const headers = {
   accept: "application/json",
@@ -44,8 +46,19 @@ const saveImages = async (username, generationID, numberOfImages, detail) => {
   const created = response.data.generations_by_pk.createdAt;
 
   for (let i = 0; i < generatedImages.length; i++) {
+    const url = generatedImages[i].url;
+    const pos = url.lastIndexOf("/");
+    var name = url.substring(pos + 1);
+    name = name.replace("Leonardo", "Stark");
+    const response = await axios({
+      url,
+      method: "GET",
+      responseType: "stream",
+    });
+
+    const uploadedUrl = await Upload(`${username}/${name}`, response.data);
     const imageData = new Image({
-      image: generatedImages[i].url,
+      image: uploadedUrl,
       owner: username,
       created: created,
       data: detail,
@@ -181,7 +194,7 @@ const handleGenerate = async (username, imgData, options) => {
   await saveImages(username, generationId, options.num_images, options);
 };
 
-router.post("/image-to-image", upload.single("image"), async (req, res) => {
+router.post("/image-to-image", fileUpload.single("image"), async (req, res) => {
   const {
     user: username,
     text: prompt,
@@ -220,6 +233,13 @@ router.post("/image-to-image", upload.single("image"), async (req, res) => {
     presetStyle: style,
   };
   await handleGenerate(username, req.file.path, options);
+  // const response = await axios({
+  //   url: "https://cdn.leonardo.ai/users/90b23a91-bfa5-446f-9f2d-cfcbde716055/generations/9820f310-479d-4c74-8e8a-e39ba4517f77/Leonardo_Diffusion_XL_handsome_guy_with_white_shirt_and_sharp_0.jpg",
+  //   method: "GET",
+  //   responseType: "stream",
+  // });
+
+  // await Upload("2.jpg", response.data);
   res.status(200).send({ message: "Success" });
 });
 
