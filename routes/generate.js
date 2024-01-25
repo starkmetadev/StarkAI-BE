@@ -55,8 +55,9 @@ const saveImages = async (username, generationID, numberOfImages, detail) => {
       method: "GET",
       responseType: "stream",
     });
-
-    const uploadedUrl = await Upload(`${username}/${name}`, response.data);
+    const pos1 = username.lastIndexOf("@");
+    var dir = username.substring(0, pos1);
+    const uploadedUrl = await Upload(`${dir}/${name}`, response.data);
     const imageData = new Image({
       image: uploadedUrl,
       owner: username,
