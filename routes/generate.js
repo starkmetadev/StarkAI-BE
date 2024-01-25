@@ -171,9 +171,7 @@ const generateImageToImage = async (imageId, options) => {
     const payload = {
       ...options,
       init_image_id: imageId,
-      init_strength: 0.5,
     };
-
     const response = await axios.post(url, payload, { headers });
 
     return response.data.sdGenerationJob.generationId;
@@ -204,6 +202,7 @@ router.post("/image-to-image", fileUpload.single("image"), async (req, res) => {
     presetStyle,
     numberOfImages,
     dimension,
+    density,
   } = req.body;
   let style, wid, hei;
   wid = parseInt(dimension.split("*")[0]);
@@ -232,15 +231,9 @@ router.post("/image-to-image", fileUpload.single("image"), async (req, res) => {
     num_images: parseInt(numberOfImages),
     alchemy: alchemy === "true" ? true : false,
     presetStyle: style,
+    init_strength: parseInt(density) / 100,
   };
   await handleGenerate(username, req.file.path, options);
-  // const response = await axios({
-  //   url: "https://cdn.leonardo.ai/users/90b23a91-bfa5-446f-9f2d-cfcbde716055/generations/9820f310-479d-4c74-8e8a-e39ba4517f77/Leonardo_Diffusion_XL_handsome_guy_with_white_shirt_and_sharp_0.jpg",
-  //   method: "GET",
-  //   responseType: "stream",
-  // });
-
-  // await Upload("2.jpg", response.data);
   res.status(200).send({ message: "Success" });
 });
 
