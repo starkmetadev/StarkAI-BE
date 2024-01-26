@@ -326,7 +326,9 @@ io.on("connection", (socket) => {
       total: options.num_images,
     });
 
-    await saveImages(username, id, options.num_images, options, socket);
+    await saveImages(username, id, options, socket);
+
+    socket.emit("Save Complete", { message: "All images saved." });
   });
 });
 
