@@ -1,6 +1,10 @@
 const mongoose = require("mongoose");
 
 const imageSchema = new mongoose.Schema({
+  generationID: {
+    required: true,
+    type: String,
+  },
   image: {
     required: true,
     type: String,
