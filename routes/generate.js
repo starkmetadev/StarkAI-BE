@@ -47,7 +47,6 @@ const waitForGeneration = async (generationID, numberOfImages) => {
   while (true) {
     try {
       response = await axios.request(options);
-      console.log(response.data.generations_by_pk);
       if (
         response.data.generations_by_pk.generated_images.length ===
         numberOfImages
@@ -89,6 +88,7 @@ const saveImages = async (username, generationID, detail, socket) => {
       response.data
     );
     const imageData = new Image({
+      generationID: generatedImages[i].id,
       image: uploadedUrl,
       owner: username,
       created: created,
