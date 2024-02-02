@@ -99,6 +99,61 @@ const saveImages = async (username, generationID, detail, socket) => {
   }
 };
 
+const saveMotion = async (username, generationID, detail, socket) => {
+  const options = {
+    method: "GET",
+    url: `https://cloud.leonardo.ai/api/rest/v1/generations/${generationID}`,
+    headers: headers,
+  };
+
+  let response = await axios.request(options);
+  const generatedImages = response.data.generations_by_pk.generated_images;
+  const created = response.data.generations_by_pk.createdAt;
+
+  console.log(generatedImages);
+  let uploadedUrl;
+  {
+    const url = generatedImages[0].url;
+    const pos = url.lastIndexOf("/");
+    var name = url.substring(pos + 1);
+    name = name.replace("Leonardo", "Stark");
+    const res = await axios({
+      url,
+      method: "GET",
+      responseType: "stream",
+    });
+    const pos1 = username.lastIndexOf("@");
+    var dir = username.substring(0, pos1);
+    await Upload(`${dir}/${generationID}/${name}`, res.data);
+  }
+
+  {
+    const url = generatedImages[0].motionMP4URL;
+    const pos = url.lastIndexOf("/");
+    var name = url.substring(pos + 1);
+    name = name.replace("Leonardo", "Stark");
+    const res = await axios({
+      url,
+      method: "GET",
+      responseType: "stream",
+    });
+    const pos1 = username.lastIndexOf("@");
+    var dir = username.substring(0, pos1);
+    uploadedUrl = await Upload(`${dir}/${generationID}/${name}`, res.data);
+  }
+
+  const imageData = new Image({
+    generationID: generatedImages[0].id,
+    image: uploadedUrl,
+    owner: username,
+    created: created,
+    data: detail,
+  });
+  await imageData.save();
+
+  socket.emit("Motion Saved", { imageData });
+};
+
 const getImageUploadUrl = async () => {
   try {
     const url = "https://cloud.leonardo.ai/api/rest/v1/init-image";
@@ -165,49 +220,6 @@ const handleGenerate = async (imgData, options) => {
 
   return generationId;
 };
-
-// router.post("/image-to-image", fileUpload.single("image"), async (req, res) => {
-//   const {
-//     user: username,
-//     text: prompt,
-//     model,
-//     alchemy,
-//     presetStyle,
-//     numberOfImages,
-//     dimension,
-//     density,
-//   } = req.body;
-//   let style, wid, hei;
-//   wid = parseInt(dimension.split("*")[0]);
-//   hei = parseInt(dimension.split("*")[1]);
-//   switch (presetStyle) {
-//     case "3D Render":
-//       style = "RENDER_3D";
-//       break;
-//     case "Sketch B/W":
-//       style = "SKETCH_BW";
-//       break;
-//     case "Sketch Color":
-//       style = "SKETCH_COLOR";
-//       break;
-//     case "StarkAI":
-//       style = "LEONARDO";
-//       break;
-//     default:
-//       style = presetStyle.toUpperCase();
-//   }
-//   const options = {
-//     height: hei,
-//     modelId: model,
-//     prompt: prompt,
-//     width: wid,
-//     num_images: parseInt(numberOfImages),
-//     alchemy: alchemy === "true" ? true : false,
-//     presetStyle: style,
-//     init_strength: parseInt(density) / 100,
-//   };
-//   await handleGenerate(username, req.file.path, options);
-// });
 
 io.on("connection", (socket) => {
   socket.on("text-to-image", async (data) => {
@@ -336,6 +348,41 @@ io.on("connection", (socket) => {
     await saveImages(username, id, options, socket);
 
     socket.emit("Save Complete", { message: "All images saved." });
+  });
+
+  socket.on("image-to-motion", async (data) => {
+    const { imageId, strength: motionStrength, imageData } = data;
+
+    const options = {
+      method: "POST",
+      url: "https://cloud.leonardo.ai/api/rest/v1/generations-motion-svd",
+      headers: headers,
+      data: {
+        imageId,
+        motionStrength,
+      },
+    };
+    // const options = {
+    //   method: "GET",
+    //   url: `https://cloud.leonardo.ai/api/rest/v1/generations/220e3b4f-b399-4cf7-b90c-bdf771d0056c`,
+    //   headers: headers,
+    // };
+
+    await axios
+      .request(options)
+      .then(async function (response) {
+        const res = response.data;
+        await waitForGeneration(res.motionSvdGenerationJob.generationId, 1);
+        await saveMotion(
+          imageData.owner,
+          res.motionSvdGenerationJob.generationId,
+          imageData.data,
+          socket
+        );
+      })
+      .catch(function (error) {
+        console.error(error);
+      });
   });
 });
 
