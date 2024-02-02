@@ -16,7 +16,7 @@ const Upload = async (filename, filedata) => {
     Bucket: process.env.BUCKET_NAME,
     Key: filename,
     // Body: fs.createReadStream("./data/lion.png"),
-    ContentType: "image/jpeg",
+    ContentType: filename.includes(".mp4") ? "video/mp4" : "image/jpeg",
     ACL: "public-read",
     Body: filedata,
   };
