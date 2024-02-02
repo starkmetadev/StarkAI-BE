@@ -362,11 +362,6 @@ io.on("connection", (socket) => {
         motionStrength,
       },
     };
-    // const options = {
-    //   method: "GET",
-    //   url: `https://cloud.leonardo.ai/api/rest/v1/generations/220e3b4f-b399-4cf7-b90c-bdf771d0056c`,
-    //   headers: headers,
-    // };
 
     await axios
       .request(options)
