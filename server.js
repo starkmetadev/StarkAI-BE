@@ -40,5 +40,5 @@ const marketPlaceRoutes = require("./marketRoutes");
 app.use("/marketplace-api", marketPlaceRoutes);
 
 app.listen(5000, () => {
-  console.log("Server Started at 5000");
+  console.log("Server Started at port 5000");
 });
