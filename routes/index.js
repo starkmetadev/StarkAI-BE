@@ -7,7 +7,7 @@ const getAllImages = require("./getAllImages");
 const deleteImage = require("./deleteImage");
 
 router.post("/login", async (req, res) => {
-  const { username, email, password } = req.body;
+  const { username, email, password, avatar } = req.body;
   User.findOne({ email: email }).then((data) => {
     if (password) {
       //Login with email and password
@@ -21,7 +21,7 @@ router.post("/login", async (req, res) => {
         if (data.email === email) return res.send({ message: "Success" });
         else return res.send({ message: "Incorrect" });
       } else {
-        const tmp = new User({ username: username, email: email });
+        const tmp = new User({ username: username, email: email, avatar: avatar});
         tmp.save();
         return res.send({ message: "Success" });
       }
