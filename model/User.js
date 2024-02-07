@@ -9,6 +9,10 @@ const userSchema = new mongoose.Schema({
     required: true,
     type: String,
   },
+  avatar: {
+    required: true,
+    type: String,
+  }
 });
 
 module.exports = mongoose.model("User", userSchema);

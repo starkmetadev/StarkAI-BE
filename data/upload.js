@@ -28,7 +28,7 @@ const Upload = async (filename, filedata) => {
         console.log("Error uploading file:", err);
         reject(err);
       } else {
-        resolve(data.Location);
+        resolve(data.Location.replace("https://starkmeta-assets.s3.us-east-2.amazonaws.com/", "https://d2zitdfpdrkol8.cloudfront.net/"));
       }
     });
   });
