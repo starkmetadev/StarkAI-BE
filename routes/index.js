@@ -5,6 +5,7 @@ const generate = require("./generate");
 const getImages = require("./getImages");
 const getAllImages = require("./getAllImages");
 const deleteImage = require("./deleteImage");
+const getRecentImages = require("./getRecentImages");
 
 router.post("/login", async (req, res) => {
   const { username, email, password, avatar } = req.body;
@@ -35,5 +36,6 @@ router.use("/generate", generate);
 router.use("/getImages", getImages);
 router.use("/getAllImages", getAllImages);
 router.use("/deleteImage", deleteImage);
+router.use("/getRecentImages", getRecentImages);
 
 module.exports = router;
