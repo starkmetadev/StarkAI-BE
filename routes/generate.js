@@ -110,7 +110,6 @@ const saveMotion = async (username, generationID, detail, socket) => {
   const generatedImages = response.data.generations_by_pk.generated_images;
   const created = response.data.generations_by_pk.createdAt;
 
-  console.log(generatedImages);
   let uploadedUrl;
   {
     const url = generatedImages[0].url;
@@ -231,7 +230,9 @@ io.on("connection", (socket) => {
       presetStyle,
       numberOfImages,
       dimension,
+      negative_prompt,
     } = data;
+
     let style, wid, hei;
     wid = parseInt(dimension.split("*")[0]);
     hei = parseInt(dimension.split("*")[1]);
@@ -263,6 +264,7 @@ io.on("connection", (socket) => {
         num_images: numberOfImages,
         alchemy: alchemy,
         presetStyle: style,
+        negative_prompt: negative_prompt,
       },
     };
     let imageData;
@@ -307,6 +309,7 @@ io.on("connection", (socket) => {
       dimension,
       density,
       image,
+      negative_prompt,
     } = data;
     let style, wid, hei;
     wid = parseInt(dimension.split("*")[0]);
@@ -336,6 +339,7 @@ io.on("connection", (socket) => {
       alchemy: alchemy === "true" ? true : false,
       presetStyle: style,
       init_strength: parseInt(density) / 100,
+      negative_prompt: negative_prompt,
     };
     const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
     const buffer = Buffer.from(base64Data, "base64");
