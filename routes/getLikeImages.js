@@ -1,10 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const Image = require("../model/Image");
+const LikeImage = require("../model/LikeImage");
 
 router.post("/", async (req, res) => {
+  const email=req.body.email;
   try {
-    const images = await (await Image.find().sort({_id: -1}).limit(10));
+    const images = await (await LikeImage.find({email: email}));
     res.json(images);
   } catch (error) {
     console.log(error);
