@@ -6,6 +6,10 @@ const getImages = require("./getImages");
 const getAllImages = require("./getAllImages");
 const deleteImage = require("./deleteImage");
 const getRecentImages = require("./getRecentImages");
+const getLikeImages = require("./getLikeImages");
+const getSignedUrl = require("./getSignedUrl");
+
+const putLikeImages = require("./putLikeImages");
 
 router.post("/login", async (req, res) => {
   const { username, email, password, avatar } = req.body;
@@ -37,5 +41,9 @@ router.use("/getImages", getImages);
 router.use("/getAllImages", getAllImages);
 router.use("/deleteImage", deleteImage);
 router.use("/getRecentImages", getRecentImages);
+router.use("/getLikeImages", getLikeImages);
+router.use("/getSignedUrl", getSignedUrl);
+
+router.use("/putLikeImages", putLikeImages);
 
 module.exports = router;
