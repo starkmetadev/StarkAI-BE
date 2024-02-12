@@ -9,6 +9,8 @@ const getRecentImages = require("./getRecentImages");
 const getLikeImages = require("./getLikeImages");
 const getSignedUrl = require("./getSignedUrl");
 
+const putLikeImages = require("./putLikeImages");
+
 router.post("/login", async (req, res) => {
   const { username, email, password, avatar } = req.body;
   User.findOne({ email: email }).then((data) => {
@@ -41,5 +43,7 @@ router.use("/deleteImage", deleteImage);
 router.use("/getRecentImages", getRecentImages);
 router.use("/getLikeImages", getLikeImages);
 router.use("/getSignedUrl", getSignedUrl);
+
+router.use("/putLikeImages", putLikeImages);
 
 module.exports = router;

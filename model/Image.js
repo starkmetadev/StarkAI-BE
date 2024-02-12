@@ -21,6 +21,9 @@ const imageSchema = new mongoose.Schema({
     required: true,
     type: Object,
   },
+  heartCount: {
+    type: Number,
+  }
 });
 
 module.exports = mongoose.model("Image", imageSchema);
