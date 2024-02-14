@@ -10,6 +10,7 @@ const getLikeImages = require("./getLikeImages");
 const getSignedUrl = require("./getSignedUrl");
 
 const putLikeImages = require("./putLikeImages");
+const authUpdate = require("./authUpdate");
 
 router.post("/login", async (req, res) => {
   const { username, email, password, avatar } = req.body;
@@ -45,5 +46,6 @@ router.use("/getLikeImages", getLikeImages);
 router.use("/getSignedUrl", getSignedUrl);
 
 router.use("/putLikeImages", putLikeImages);
+// router.use("/authUpdate", authUpdate);
 
 module.exports = router;
