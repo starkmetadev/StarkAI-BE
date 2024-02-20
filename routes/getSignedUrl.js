@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-var cfsign = require('aws-cloudfront-sign');
+const cfsign = require('aws-cloudfront-sign');
 
 router.post("/", async (req, res) => {
   const url=req.body.url;

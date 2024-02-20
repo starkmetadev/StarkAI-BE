@@ -4,7 +4,7 @@ const Image = require("../model/Image");
 
 router.post("/", async (req, res) => {
   try {
-    const images = await (await Image.find().sort({_id: -1}).limit(10));
+    const images = await (await Image.find({image: {$regex: /\.jpg$/}}).sort({_id: -1}).limit(12));
     res.json(images);
   } catch (error) {
     console.log(error);
