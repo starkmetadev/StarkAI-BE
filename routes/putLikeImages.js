@@ -12,13 +12,13 @@ router.post("/", async (req, res) => {
     const like = await LikeImage.findOneAndDelete({email: email, imageID: imageID})
     if(like) {
       await image.updateOne({heartCount: heartCount-1});
-      res.json({msg: "Deleted!"});
+      res.json({msg: "Deleted!", heartCount: heartCount-1});
     }
     else {
       const likeImage = new LikeImage({email:email, imageID: imageID});
       likeImage.save();
       await image.updateOne({heartCount: heartCount+1});
-      res.json({msg: "Added!"});
+      res.json({msg: "Added!", heartCount: heartCount+1});
     }
   } catch (error) {
     console.log(error);
