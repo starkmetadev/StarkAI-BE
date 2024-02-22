@@ -1,5 +1,5 @@
 const AWS = require("aws-sdk");
-const fs = require("fs");
+const sharp = require("sharp");
 
 // Set the region and access keys
 AWS.config.update({

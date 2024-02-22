@@ -26,6 +26,7 @@ const io = new Server(server, {
 });
 
 const multer = require("multer");
+const sharp = require("sharp");
 const fileUpload = multer({ dest: os.tmpdir() });
 
 const headers = {
@@ -83,19 +84,32 @@ const saveImages = async (username, generationID, detail, socket) => {
     });
     const pos1 = username.lastIndexOf("@");
     var dir = username.substring(0, pos1);
-    const uploadedUrl = await Upload(
-      `${dir}/${generationID}/${name}`,
-      response.data
-    );
+    const smallimage = sharp().resize(512);
+    const originimage = sharp();
+    response.data.pipe(smallimage);
+    response.data.pipe(originimage);
+    // const processedImagePromise = new Promise((resolve, reject) => {
+    //   smallimage.on("finish", resolve);
+    //   smallimage.on("error", reject);
+    // });
+    // await processedImagePromise;
+    console.log("--------resized image-----------");
+    const smallurl = await Upload(`${dir}/${generationID}/${name}`, smallimage);
+    console.log(smallurl);
     const imageData = new Image({
       generationID: generatedImages[i].id,
-      image: uploadedUrl,
+      image: smallurl,
       owner: username,
       created: created,
       data: detail,
     });
     await imageData.save();
     socket.emit("Image Saved", { id: i + 1, total: generatedImages.length });
+    const uploadedUrl = await Upload(
+      `${dir}/${generationID}/${name}_ORIGIN`,
+      originimage
+    );
+    console.log(uploadedUrl);
   }
 };
 
