@@ -28,7 +28,7 @@ router.post("/login", async (req, res) => {
         process.env.JWT_SECRET,
         { expiresIn: "1h" }
       );
-      return res.status(201).json({ message: "Success", token });
+      return res.status(200).json({ message: "Success", token });
     }
     if (
       password &&
