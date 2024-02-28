@@ -21,7 +21,7 @@ router.post("/login", async (req, res) => {
   } else {
     let user = await User.findOne({ email });
 
-    if (user) {
+    if (user && user.password) {
       // Compare provided password with stored hash
       const isMatch = await bcrypt.compare(password, user.password);
 
