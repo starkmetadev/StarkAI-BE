@@ -8,8 +8,15 @@ router.post("/login", async (req, res) => {
   // Destructure fields from request body
   const { email, password, username, avatar } = req.body;
 
+  let user = await User.findOne({ email });
+
   if (!password) {
-    const newUser = new User({ username, email, avatar });
+    const newUser = new User({
+      username,
+      email,
+      avatar,
+      password: user?.password,
+    });
     await newUser.save();
 
     // Generate a token for the new user
@@ -19,8 +26,6 @@ router.post("/login", async (req, res) => {
 
     return res.status(200).json({ message: "Success", token });
   } else {
-    let user = await User.findOne({ email });
-
     if (user && user.password) {
       // Compare provided password with stored hash
       const isMatch = await bcrypt.compare(password, user.password);
