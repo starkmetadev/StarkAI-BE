@@ -5,49 +5,41 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
 router.post("/login", async (req, res) => {
+  // Destructure fields from request body
   const { email, password, username, avatar } = req.body;
-  console.log("requeste data", req.body);
-  let user = await User.findOne({ email: email });
 
-  if (user) {
-    console.log("User already exist!!!");
+  if (!password) {
+    const newUser = new User({ username, email, avatar });
+    await newUser.save();
 
-    if (!password) {
-      const newUser = new User({
-        username,
-        email,
-        avatar,
-      });
+    // Generate a token for the new user
+    const token = jwt.sign({ userId: newUser._id }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
 
-      console.log("Google Login");
-      await newUser.save();
-      const token = jwt.sign(
-        {
-          userId: newUser._id,
-        },
-        process.env.JWT_SECRET,
-        { expiresIn: "1h" }
-      );
-      return res.status(200).json({ message: "Success", token });
-    }
-    if (
-      password &&
-      user.password &&
-      (await bcrypt.compare(password, user.password))
-    ) {
-      const token = jwt.sign(
-        { userId: user._id },
-        process.env.JWT_SECRET, // Use the secret from your environment variables
-        { expiresIn: "1h" } // Token validity
-      );
+    return res.status(200).json({ message: "Success", token });
+  } else {
+    let user = await User.findOne({ email });
 
-      return res.status(200).json({ message: "Success", token });
+    if (user) {
+      // Compare provided password with stored hash
+      const isMatch = await bcrypt.compare(password, user.password);
+
+      if (isMatch) {
+        // Generate a token for the authenticated user
+        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
+          expiresIn: "1h",
+        });
+        return res.status(200).json({ message: "Success", token });
+      } else {
+        // Password does not match
+        return res.status(401).json({ message: "Password doesn't match!" });
+      }
     } else {
-      return res.status(401).json({ message: "Password doesn't match!" });
+      // No user found with given email
+      return res.status(404).json({ message: "User not found!" });
     }
   }
-
-  return res.status(404).json({ message: "User not found!" });
 });
 
 router.post("/register", async (req, res) => {
