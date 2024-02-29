@@ -3,13 +3,13 @@ const router = express.Router();
 const User = require("../model/User");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { sendEmail } = require("../utils/email");
+const generateVerificationCodeWithExpiry = require("../middleware/auth/generateVerificationCode");
 
 router.post("/login", async (req, res) => {
-  // Destructure fields from request body
   const { email, password, username, avatar } = req.body;
 
   let user = await User.findOne({ email });
-
   if (!password) {
     const newUser = new User({
       username,
@@ -51,7 +51,7 @@ router.post("/register", async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    const existingUser = await User.findOne({ email: email });
+    const existingUser = await User.findOne({ email });
 
     if (existingUser) {
       console.log("Already exist");
@@ -75,6 +75,80 @@ router.post("/register", async (req, res) => {
     return res
       .status(500)
       .json({ message: "Server error during registration" });
+  }
+});
+
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Email is required!" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        message: "Invalid email",
+      });
+    }
+    const { verificationCode, expiryTime } =
+      generateVerificationCodeWithExpiry();
+    const subject = "Forgot password.";
+    const content = `<html>
+        <head>
+          <title> Password reset url is here.</title>
+        </head>
+        <body>
+          <div>
+            verification code: ${verificationCode}, expiredTime: 10min
+          </div>
+          <div>
+           This will be expired in 10 minutes.
+        </div>
+        </body>
+      </html>`;
+    const emailRes = await sendEmail(email, subject, content);
+    if (emailRes === 200) {
+      return res.status(200).json({
+        message: "Verification code sent",
+        verificationCode,
+        expiryTime,
+      });
+    } else {
+      return res.status(500).json({
+        message: "Failed to send verification code",
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Interval server error",
+    });
+  }
+});
+
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        message: "Invalid email",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    await user.updateOne({ password: hashedPassword });
+
+    return res.status(200).json({
+      message: "Password reset successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Interval server error",
+    });
   }
 });
 
