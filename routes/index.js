@@ -10,6 +10,7 @@ const getSignedUrl = require("./getSignedUrl");
 
 const putLikeImages = require("./putLikeImages");
 const auth = require("./auth");
+const follow = require("./follow");
 
 router.use("/auth", auth);
 router.use("/generate", generate);
@@ -20,5 +21,6 @@ router.use("/getRecentImages", getRecentImages);
 router.use("/getLikeImages", getLikeImages);
 router.use("/getSignedUrl", getSignedUrl);
 router.use("/putLikeImages", putLikeImages);
+router.use("/follow", follow);
 
 module.exports = router;
