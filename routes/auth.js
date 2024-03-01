@@ -24,7 +24,7 @@ router.post("/login", async (req, res) => {
       expiresIn: "1h",
     });
 
-    return res.status(200).json({ message: "Success", token });
+    return res.status(200).json({ message: "Success", token, email });
   } else {
     if (user && user.password) {
       // Compare provided password with stored hash
@@ -35,7 +35,7 @@ router.post("/login", async (req, res) => {
         const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
           expiresIn: "1h",
         });
-        return res.status(200).json({ message: "Success", token });
+        return res.status(200).json({ message: "Success", token, email });
       } else {
         // Password does not match
         return res.status(401).json({ message: "Password doesn't match!" });

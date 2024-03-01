@@ -36,7 +36,9 @@ router.post("/handle-follower", async (req, res) => {
   } catch (error) {
     // Handle errors e.g. database connection issues or other
     console.error("An error occurred:", error);
-    res.status(500).send("An error occurred while updating the follower list");
+    res
+      .status(500)
+      .json({ message: "An error occurred while updating the follower list" });
   }
 });
 
