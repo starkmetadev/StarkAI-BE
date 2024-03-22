@@ -35,368 +35,269 @@ const headers = {
   authorization: `Bearer ${process.env.LEONARDO_API_KEY}`,
 };
 
-const waitForGeneration = async (generationID, numberOfImages) => {
-  const options = {
-    method: "GET",
-    url: `https://cloud.leonardo.ai/api/rest/v1/generations/${generationID}`,
-    headers: headers,
-  };
+// const waitForGeneration = async (generationID, numberOfImages) => {
+//   const options = {
+//     method: "GET",
+//     url: `https://cloud.leonardo.ai/api/rest/v1/generations/${generationID}`,
+//     headers: headers,
+//   };
 
-  let response;
-  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+//   let response;
+//   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  while (true) {
-    try {
-      response = await axios.request(options);
-      if (
-        response.data.generations_by_pk.generated_images.length ===
-        numberOfImages
-      ) {
-        break;
-      }
-    } catch (error) {
-      console.error(error);
-    }
-    await wait(1000);
-  }
-};
+//   while (true) {
+//     try {
+//       response = await axios.request(options);
+//       if (
+//         response.data.generations_by_pk.generated_images.length ===
+//         numberOfImages
+//       ) {
+//         break;
+//       }
+//     } catch (error) {
+//       console.error(error);
+//     }
+//     await wait(1000);
+//   }
+// };
 
-const saveImages = async (username, generationID, detail, socket) => {
-  const options = {
-    method: "GET",
-    url: `https://cloud.leonardo.ai/api/rest/v1/generations/${generationID}`,
-    headers: headers,
-  };
+// const saveImages = async (username, generationID, detail, socket) => {
+//   const options = {
+//     method: "GET",
+//     url: `https://cloud.leonardo.ai/api/rest/v1/generations/${generationID}`,
+//     headers: headers,
+//   };
 
-  let response = await axios.request(options);
-  const generatedImages = response.data.generations_by_pk.generated_images;
-  const created = response.data.generations_by_pk.createdAt;
+//   let response = await axios.request(options);
+//   const generatedImages = response.data.generations_by_pk.generated_images;
+//   const created = response.data.generations_by_pk.createdAt;
 
-  for (let i = 0; i < generatedImages.length; i++) {
-    const url = generatedImages[i].url;
-    const pos = url.lastIndexOf("/");
-    var name = url.substring(pos + 1);
-    name = name.replace("Leonardo", "Stark");
-    const response = await axios({
-      url,
-      method: "GET",
-      responseType: "stream",
-    });
-    const pos1 = username.lastIndexOf("@");
-    var dir = username.substring(0, pos1);
-    const smallimage = sharp().resize(512);
-    const originimage = sharp();
-    response.data.pipe(smallimage);
-    response.data.pipe(originimage);
-    // const processedImagePromise = new Promise((resolve, reject) => {
-    //   smallimage.on("finish", resolve);
-    //   smallimage.on("error", reject);
-    // });
-    // await processedImagePromise;
-    console.log("--------resized image-----------");
-    const smallurl = await Upload(`${dir}/${generationID}/${name}`, smallimage);
-    console.log(smallurl);
-    const imageData = new Image({
-      generationID: generatedImages[i].id,
-      image: smallurl,
-      owner: username,
-      created: created,
-      data: detail,
-    });
-    await imageData.save();
-    socket.emit("Image Saved", { id: i + 1, total: generatedImages.length });
-    const uploadedUrl = await Upload(
-      `${dir}/${generationID}/${name}_ORIGIN`,
-      originimage
-    );
-    console.log(uploadedUrl);
-  }
-};
+//   for (let i = 0; i < generatedImages.length; i++) {
+//     const url = generatedImages[i].url;
+//     const pos = url.lastIndexOf("/");
+//     var name = url.substring(pos + 1);
+//     name = name.replace("Leonardo", "Stark");
+//     const response = await axios({
+//       url,
+//       method: "GET",
+//       responseType: "stream",
+//     });
+//     const pos1 = username.lastIndexOf("@");
+//     var dir = username.substring(0, pos1);
+//     const smallimage = sharp().resize(512);
+//     const originimage = sharp();
+//     response.data.pipe(smallimage);
+//     response.data.pipe(originimage);
+//     // const processedImagePromise = new Promise((resolve, reject) => {
+//     //   smallimage.on("finish", resolve);
+//     //   smallimage.on("error", reject);
+//     // });
+//     // await processedImagePromise;
+//     console.log("--------resized image-----------");
+//     const smallurl = await Upload(`${dir}/${generationID}/${name}`, smallimage);
+//     console.log(smallurl);
+//     const imageData = new Image({
+//       generationID: generatedImages[i].id,
+//       image: smallurl,
+//       owner: username,
+//       created: created,
+//       data: detail,
+//     });
+//     await imageData.save();
+//     socket.emit("Image Saved", { id: i + 1, total: generatedImages.length });
+//     const uploadedUrl = await Upload(
+//       `${dir}/${generationID}/${name}_ORIGIN`,
+//       originimage
+//     );
+//     console.log(uploadedUrl);
+//   }
+// };
 
-const saveMotion = async (username, generationID, detail, socket) => {
-  const options = {
-    method: "GET",
-    url: `https://cloud.leonardo.ai/api/rest/v1/generations/${generationID}`,
-    headers: headers,
-  };
+// const saveMotion = async (username, generationID, detail, socket) => {
+//   const options = {
+//     method: "GET",
+//     url: `https://cloud.leonardo.ai/api/rest/v1/generations/${generationID}`,
+//     headers: headers,
+//   };
 
-  let response = await axios.request(options);
-  const generatedImages = response.data.generations_by_pk.generated_images;
-  const created = response.data.generations_by_pk.createdAt;
+//   let response = await axios.request(options);
+//   const generatedImages = response.data.generations_by_pk.generated_images;
+//   const created = response.data.generations_by_pk.createdAt;
 
-  let uploadedUrl;
-  {
-    const url = generatedImages[0].url;
-    const pos = url.lastIndexOf("/");
-    var name = url.substring(pos + 1);
-    name = name.replace("Leonardo", "Stark");
-    const res = await axios({
-      url,
-      method: "GET",
-      responseType: "stream",
-    });
-    const pos1 = username.lastIndexOf("@");
-    var dir = username.substring(0, pos1);
-    await Upload(`${dir}/${generationID}/${name}`, res.data);
-  }
+//   let uploadedUrl;
+//   {
+//     const url = generatedImages[0].url;
+//     const pos = url.lastIndexOf("/");
+//     var name = url.substring(pos + 1);
+//     name = name.replace("Leonardo", "Stark");
+//     const res = await axios({
+//       url,
+//       method: "GET",
+//       responseType: "stream",
+//     });
+//     const pos1 = username.lastIndexOf("@");
+//     var dir = username.substring(0, pos1);
+//     await Upload(`${dir}/${generationID}/${name}`, res.data);
+//   }
 
-  {
-    const url = generatedImages[0].motionMP4URL;
-    const pos = url.lastIndexOf("/");
-    var name = url.substring(pos + 1);
-    name = name.replace("Leonardo", "Stark");
-    const res = await axios({
-      url,
-      method: "GET",
-      responseType: "stream",
-    });
-    const pos1 = username.lastIndexOf("@");
-    var dir = username.substring(0, pos1);
-    uploadedUrl = await Upload(`${dir}/${generationID}/${name}`, res.data);
-  }
+//   {
+//     const url = generatedImages[0].motionMP4URL;
+//     const pos = url.lastIndexOf("/");
+//     var name = url.substring(pos + 1);
+//     name = name.replace("Leonardo", "Stark");
+//     const res = await axios({
+//       url,
+//       method: "GET",
+//       responseType: "stream",
+//     });
+//     const pos1 = username.lastIndexOf("@");
+//     var dir = username.substring(0, pos1);
+//     uploadedUrl = await Upload(`${dir}/${generationID}/${name}`, res.data);
+//   }
 
-  const imageData = new Image({
-    generationID: generatedImages[0].id,
-    image: uploadedUrl,
-    owner: username,
-    created: created,
-    data: detail,
-  });
-  await imageData.save();
+//   const imageData = new Image({
+//     generationID: generatedImages[0].id,
+//     image: uploadedUrl,
+//     owner: username,
+//     created: created,
+//     data: detail,
+//   });
+//   await imageData.save();
 
-  socket.emit("Motion Saved", { imageData });
-};
+//   socket.emit("Motion Saved", { imageData });
+// };
 
-const getImageUploadUrl = async () => {
-  try {
-    const url = "https://cloud.leonardo.ai/api/rest/v1/init-image";
-    const payload = { extension: "jpg" };
+// const getImageUploadUrl = async () => {
+//   try {
+//     const url = "https://cloud.leonardo.ai/api/rest/v1/init-image";
+//     const payload = { extension: "jpg" };
 
-    const response = await axios.post(url, payload, { headers });
+//     const response = await axios.post(url, payload, { headers });
 
-    return response.data.uploadInitImage;
-  } catch (error) {
-    console.error(error);
-  }
-};
+//     return response.data.uploadInitImage;
+//   } catch (error) {
+//     console.error(error);
+//   }
+// };
 
-const uploadImage = async (uploadInitImage, imgData) => {
-  try {
-    const url = uploadInitImage.url;
-    const fields = JSON.parse(uploadInitImage.fields);
-    const formData = new FormData();
+// const uploadImage = async (uploadInitImage, imgData) => {
+//   try {
+//     const url = uploadInitImage.url;
+//     const fields = JSON.parse(uploadInitImage.fields);
+//     const formData = new FormData();
 
-    for (let key in fields) {
-      formData.append(key, fields[key]);
-    }
+//     for (let key in fields) {
+//       formData.append(key, fields[key]);
+//     }
 
-    // formData.append("file", fs.createReadStream(imgData));
-    formData.append("file", imgData);
+//     // formData.append("file", fs.createReadStream(imgData));
+//     formData.append("file", imgData);
 
-    // Axios will set the Content-Type to multipart/form-data boundary automatically.
-    await axios.post(url, formData);
+//     // Axios will set the Content-Type to multipart/form-data boundary automatically.
+//     await axios.post(url, formData);
 
-    return uploadInitImage.id; // Image ID for further actions
-  } catch (error) {
-    console.error(error);
-  }
-};
+//     return uploadInitImage.id; // Image ID for further actions
+//   } catch (error) {
+//     console.error(error);
+//   }
+// };
 
-const generateImageToImage = async (imageId, options) => {
-  try {
-    const url = "https://cloud.leonardo.ai/api/rest/v1/generations";
-    const payload = {
-      ...options,
-      init_image_id: imageId,
-    };
-    const response = await axios.post(url, payload, { headers });
+// const generateImageToImage = async (imageId, options) => {
+//   try {
+//     const url = "https://cloud.leonardo.ai/api/rest/v1/generations";
+//     const payload = {
+//       ...options,
+//       init_image_id: imageId,
+//     };
+//     const response = await axios.post(url, payload, { headers });
 
-    return response.data.sdGenerationJob.generationId;
-  } catch (error) {
-    console.error(error);
-  }
-};
+//     return response.data.sdGenerationJob.generationId;
+//   } catch (error) {
+//     console.error(error);
+//   }
+// };
 
-const handleGenerate = async (imgData, options) => {
-  const uploadInitImage = await getImageUploadUrl();
+// const handleGenerate = async (imgData, options) => {
+//   const uploadInitImage = await getImageUploadUrl();
 
-  if (!uploadInitImage) return;
+//   if (!uploadInitImage) return;
 
-  const imageId = await uploadImage(uploadInitImage, imgData);
+//   const imageId = await uploadImage(uploadInitImage, imgData);
 
-  if (!imageId) return;
+//   if (!imageId) return;
 
-  const generationId = await generateImageToImage(imageId, options);
-  if (!generationId) return;
+//   const generationId = await generateImageToImage(imageId, options);
+//   if (!generationId) return;
 
-  await waitForGeneration(generationId, options.num_images);
+//   await waitForGeneration(generationId, options.num_images);
 
-  return generationId;
-};
+//   return generationId;
+// };
 
 io.on("connection", (socket) => {
   socket.on("text-to-image", async (data) => {
-    const {
-      user: username,
-      text: prompt,
-      model,
-      alchemy,
-      presetStyle,
-      numberOfImages,
-      dimension,
-      negative_prompt,
-    } = data;
+    var myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
 
-    let style, wid, hei;
-    wid = parseInt(dimension.split("*")[0]);
-    hei = parseInt(dimension.split("*")[1]);
-    switch (presetStyle) {
-      case "3D Render":
-        style = "RENDER_3D";
-        break;
-      case "Sketch B/W":
-        style = "SKETCH_BW";
-        break;
-      case "Sketch Color":
-        style = "SKETCH_COLOR";
-        break;
-      case "StarkAI":
-        style = "LEONARDO";
-        break;
-      default:
-        style = presetStyle.toUpperCase();
-    }
-    const options = {
-      method: "POST",
-      url: "https://cloud.leonardo.ai/api/rest/v1/generations",
-      headers: headers,
-      data: {
-        height: hei,
-        modelId: model,
-        prompt: prompt,
-        width: wid,
-        num_images: numberOfImages,
-        alchemy: alchemy,
-        presetStyle: style,
-        negative_prompt: negative_prompt,
-      },
-    };
-    let imageData;
-
-    await axios
-      .request(options)
-      .then(function (response) {
-        imageData = response.data;
-      })
-      .catch(function (error) {
-        console.error(error);
-      });
-
-    await waitForGeneration(
-      imageData.sdGenerationJob.generationId,
-      numberOfImages
-    );
-
-    // res.status(200).send({ message: "Success" });
-    socket.emit("Generation Complete", {
-      total: numberOfImages,
+    console.log(data);
+    const wh = data.dimension.split("*");
+    var raw = JSON.stringify({
+      key: "LhQrQ6mWGnOVEcg6Qd4WUfwDKVszcLS0U4aslwWUJe1zBuueou6XgLqT9XRM",
+      prompt: data.text,
+      negative_prompt: "bad quality",
+      width: wh[0],
+      height: wh[1],
+      safety_checker: false,
+      seed: null,
+      samples: 1,
+      base64: false,
+      webhook: null,
+      track_id: null,
     });
 
-    await saveImages(
-      username,
-      imageData.sdGenerationJob.generationId,
-      options.data,
-      socket
-    );
+    var requestOptions = {
+      method: "POST",
+      headers: myHeaders,
+      body: raw,
+      redirect: "follow",
+    };
 
+    await fetch(
+      "https://modelslab.com/api/v6/realtime/text2img",
+      requestOptions
+    )
+      .then((response) => response.text())
+      .then(async (result) => {
+        const tmp = JSON.parse(result);
+
+        const options = {
+          height: tmp.meta.height,
+          modelId: data.model,
+          prompt: data.text,
+          width: tmp.meta.width,
+          num_images: 1,
+          alchemy: data.alchemy === "true" ? true : false,
+          presetStyle: data.presetStyle,
+          negative_prompt: data.negative_prompt,
+        };
+
+        const imageData = new Image({
+          generationID: tmp.id,
+          image: tmp.output[0],
+          owner: data.user,
+          created: new Date(),
+          data: options,
+        });
+        // console.log(result, imageData);
+        await imageData.save();
+      })
+      .catch((error) => console.log("error", error));
     socket.emit("Save Complete", { message: "All images saved." });
   });
 
-  socket.on("image-to-image", async (data) => {
-    const {
-      user: username,
-      text: prompt,
-      model,
-      alchemy,
-      presetStyle,
-      numberOfImages,
-      dimension,
-      density,
-      image,
-      negative_prompt,
-    } = data;
-    let style, wid, hei;
-    wid = parseInt(dimension.split("*")[0]);
-    hei = parseInt(dimension.split("*")[1]);
-    switch (presetStyle) {
-      case "3D Render":
-        style = "RENDER_3D";
-        break;
-      case "Sketch B/W":
-        style = "SKETCH_BW";
-        break;
-      case "Sketch Color":
-        style = "SKETCH_COLOR";
-        break;
-      case "StarkAI":
-        style = "LEONARDO";
-        break;
-      default:
-        style = presetStyle.toUpperCase();
-    }
-    const options = {
-      height: hei,
-      modelId: model,
-      prompt: prompt,
-      width: wid,
-      num_images: parseInt(numberOfImages),
-      alchemy: alchemy === "true" ? true : false,
-      presetStyle: style,
-      init_strength: parseInt(density) / 100,
-      negative_prompt: negative_prompt,
-    };
-    const base64Data = image.replace(/^data:image\/\w+;base64,/, "");
-    const buffer = Buffer.from(base64Data, "base64");
-    const id = await handleGenerate(buffer, options);
+  socket.on("image-to-image", async (data) => {});
 
-    socket.emit("Generation Complete", {
-      total: options.num_images,
-    });
-
-    await saveImages(username, id, options, socket);
-
-    socket.emit("Save Complete", { message: "All images saved." });
-  });
-
-  socket.on("image-to-motion", async (data) => {
-    const { imageId, strength: motionStrength, imageData } = data;
-
-    const options = {
-      method: "POST",
-      url: "https://cloud.leonardo.ai/api/rest/v1/generations-motion-svd",
-      headers: headers,
-      data: {
-        imageId,
-        motionStrength,
-      },
-    };
-
-    await axios
-      .request(options)
-      .then(async function (response) {
-        const res = response.data;
-        await waitForGeneration(res.motionSvdGenerationJob.generationId, 1);
-        await saveMotion(
-          imageData.owner,
-          res.motionSvdGenerationJob.generationId,
-          imageData.data,
-          socket
-        );
-      })
-      .catch(function (error) {
-        console.error(error);
-      });
-  });
+  socket.on("image-to-motion", async (data) => {});
 });
 
 server.listen(5001, () => {
