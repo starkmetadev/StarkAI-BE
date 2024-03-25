@@ -8,6 +8,7 @@ const FormData = require("form-data");
 const stream = require("stream");
 const Upload = require("../data/upload");
 const path = require("path");
+const request = require("request");
 
 const app = express();
 const http = require("http");
@@ -239,7 +240,6 @@ io.on("connection", (socket) => {
     var myHeaders = new Headers();
     myHeaders.append("Content-Type", "application/json");
 
-    console.log(data);
     const wh = data.dimension.split("*");
     var raw = JSON.stringify({
       key: "LhQrQ6mWGnOVEcg6Qd4WUfwDKVszcLS0U4aslwWUJe1zBuueou6XgLqT9XRM",
@@ -288,6 +288,7 @@ io.on("connection", (socket) => {
           created: new Date(),
           data: options,
         });
+
         // console.log(result, imageData);
         await imageData.save();
       })
@@ -298,6 +299,95 @@ io.on("connection", (socket) => {
   socket.on("image-to-image", async (data) => {});
 
   socket.on("image-to-motion", async (data) => {});
+
+  socket.on("text-to-video", async (data) => {
+    var myHeaders = new Headers();
+    myHeaders.append("Content-Type", "application/json");
+
+    const wh = data.dimension.split("*");
+    var raw = JSON.stringify({
+      key: "LhQrQ6mWGnOVEcg6Qd4WUfwDKVszcLS0U4aslwWUJe1zBuueou6XgLqT9XRM",
+      model_id: "zeroscope",
+      prompt: data.text,
+      seconds: 5,
+      negative_prompt: "low quality",
+      heigh: wh[0],
+      width: wh[1],
+      num_frames: 16,
+      num_inference_steps: 20,
+      guidance_scale: 7,
+      upscale_height: 1024,
+      upscale_width: 1024,
+      upscale_strength: 0.6,
+      upscale_guidance_scale: 12,
+      upscale_num_inference_steps: 20,
+      output_type: "mp4",
+      webhook: null,
+      track_id: null,
+    });
+
+    var requestOptions = {
+      method: "POST",
+      headers: myHeaders,
+      body: raw,
+      // url: "https://modelslab.com/api/v5/text2video",
+      redirect: "follow",
+    };
+
+    await fetch("https://modelslab.com/api/v5/text2video", requestOptions)
+      .then((response) => response.text())
+      .then(async (result) => {
+        const tmp = JSON.parse(result);
+        const link = tmp.future_links[0];
+        const fetch_url = tmp.fetch_result;
+        {
+          var options = {
+            method: "POST",
+            headers: myHeaders,
+            body: JSON.stringify({
+              key: "LhQrQ6mWGnOVEcg6Qd4WUfwDKVszcLS0U4aslwWUJe1zBuueou6XgLqT9XRM",
+            }),
+            redirect: "follow",
+          };
+
+          let fg = true;
+          const wait = (ms) =>
+            new Promise((resolve) => setTimeout(resolve, ms));
+
+          while (fg) {
+            await fetch(fetch_url, options)
+              .then((res) => res.json())
+              .then((result) => {
+                if (result.status === "success") fg = false;
+              });
+            await wait(2000);
+          }
+          const imageOptions = {
+            height: tmp.meta.height,
+            modelId: data.model,
+            prompt: data.text,
+            width: tmp.meta.width,
+            num_images: 1,
+            alchemy: data.alchemy === "true" ? true : false,
+            presetStyle: data.presetStyle,
+            negative_prompt: data.negative_prompt,
+          };
+
+          const imageData = new Image({
+            generationID: tmp.id,
+            image: link,
+            owner: data.user,
+            created: new Date(),
+            data: imageOptions,
+          });
+
+          // console.log(result, imageData);
+          await imageData.save();
+          socket.emit("Save Complete", { message: "All images saved." });
+        }
+      })
+      .catch((error) => console.log("error", error));
+  });
 });
 
 server.listen(5001, () => {
